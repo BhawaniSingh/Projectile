@@ -13,12 +13,14 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 
 import javax.swing.JComponent;
 
 public class TestProjectile extends JComponent implements Runnable, MouseListener, MouseMotionListener, MouseWheelListener, ComponentListener {
 
-	private double initialVelocity = 30;
+	private double initialVelocity = 300;
 	private double angle = 45;
 	private double time = 0.0;
 	private double deltaTime = 0.1;
@@ -45,6 +47,7 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 	private double scaleXAmount = 0.1d;
 	private double scaleYAmount = (16 / 9) * scaleXAmount;
 
+	private int offset = 50;
 	private int h;
 	private int w;
 
@@ -106,16 +109,22 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 		graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 //		graphics.setFont(new Font(this.getFont().getName(), Font.ITALIC, 50));
 		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-		graphics.translate(ball.getRadius(), getHeight() - ball.getRadius());
-		graphics.scale(scaleX, scaleY);
-		graphics.translate(-ball.getRadius(), -getHeight() + ball.getRadius());
-		graphics.translate(xTranslate, yTranslate);
-		graphics.setStroke(new BasicStroke());
-		graphics.drawLine(ball.getRadius(), 0, ball.getRadius(), getHeight() - ball.getRadius());
-		graphics.drawLine(ball.getRadius(), getHeight() - ball.getRadius(), getWidth() + ball.getRadius(), getHeight() - ball.getRadius());
-//		graphics.drawLine(0, 0, 0, h);
-//		graphics.drawLine(0, h, w, h);
-		ball.renderBall(graphics);
+		AffineTransform affineTransform = new AffineTransform();
+		affineTransform.translate(offset, getHeight() - offset);
+		affineTransform.scale(scaleX, scaleY);
+		affineTransform.translate(-offset, -getHeight() + offset);
+		affineTransform.translate(xTranslate, yTranslate);
+		graphics.setStroke(new BasicStroke(2.0f));
+		graphics.drawLine(offset, getHeight() - offset, offset, -((getHeight() / 1) - offset));
+		graphics.drawLine(offset, getHeight() - offset, (getWidth() / 1) + offset, getHeight() - offset);
+		graphics.transform(affineTransform);
+		try {
+			graphics.setStroke(new TransformedStroke(new BasicStroke(), affineTransform));
+		} catch (NoninvertibleTransformException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ball.renderBall(graphics, affineTransform);
 		// This method ensures that the display is up-to-date. It is useful for animation.
 		Toolkit.getDefaultToolkit().sync();
 		// Releases system resources and disposes graphics context
@@ -127,8 +136,6 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 		if (horizontalrange >= horizontalDistance) {
 			verticalVelocity = calculateVerticalVelocity();
 			verticalHeight = calculateVerticalHeight();
-//			System.out.println("Current Horizontal Distance : " + calculateHorizontalDistance());
-//			System.out.println("Current Vertical Height : " + verticalHeight + "\tVertical Velocity : " + verticalVelocity);
 			horizontalDistance = calculateHorizontalDistance();
 			updateTime();
 		}
@@ -232,9 +239,12 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 	 * Update Time
 	 * @param args
 	 */
-	// do stuff  
 	public void updateTime() {
 		time = time + deltaTime;
+	}
+
+	public Ball getBall() {
+		return ball;
 	}
 
 	//Mouse Listeners

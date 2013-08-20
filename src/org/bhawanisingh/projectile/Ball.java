@@ -3,14 +3,16 @@ package org.bhawanisingh.projectile;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 public class Ball {
 	final float dash1[] = { 10.0f, 5.0f, 2.0f, 5.0f };
-	final BasicStroke dashed = new BasicStroke(1.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND, 10.0f, dash1, 0.0f);
+	final BasicStroke dashed = new BasicStroke(2.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND, 10.0f, dash1, 0.0f);
 
-	private int radius = 10;
+	private int radius = 0;
 	private int x = 10;
 	private int previousX = x;
 	private int y = 10;
@@ -25,30 +27,36 @@ public class Ball {
 		this.testProjectile = testProjectile;
 	}
 
-	public void renderBall(Graphics2D graphics2d) {
-		graphics2d.setStroke(dashed);
+	public void renderBall(Graphics2D graphics2d, AffineTransform affineTransform) {
+		try {
+			graphics2d.setStroke(new TransformedStroke(dashed, affineTransform));
+		} catch (NoninvertibleTransformException e) {
+			//TODO Crap Handling
+		}
 		graphics2d.drawPolyline(arrayListToIntArray(xPointsList), arrayListToIntArray(yPointsList), xPointsList.size());
 
 		graphics2d.rotate(rotate, x, y);
 		graphics2d.setColor(Color.GREEN);
+		try {
+			graphics2d.transform(affineTransform.createInverse());
+		} catch (NoninvertibleTransformException e) {
 
+		}
 		graphics2d.fillOval(x - radius, y - radius, radius * 2, radius * 2);
 		graphics2d.setColor(Color.BLACK);
 		graphics2d.drawLine(x, y, (x - ((radius * 3) / 4)), (y - ((radius * 3) / 4)));
 		graphics2d.drawLine(x, y, (x - ((radius * 3) / 4)), (y - ((radius * 3) / 4)));
-
-		graphics2d.setStroke(dashed);
 		graphics2d.setColor(Color.MAGENTA);
 		graphics2d.drawOval(x - radius, y - radius, radius * 2, radius * 2);
 	}
 
 	public void parabolicMotion() {
 		double verticalVelocity = testProjectile.calculateVerticalHeight();
-		x = (int) (testProjectile.calculateHorizontalDistance() + radius);
+		x = (int) (testProjectile.calculateHorizontalDistance() + 50);
 		if (verticalVelocity <= 0) {
 			verticalVelocity = -verticalVelocity;
 		}
-		y = (int) ((testProjectile.getHeight() - verticalVelocity) - radius);
+		y = (int) ((testProjectile.getHeight() - verticalVelocity) - 50);
 		addPointToArrayList();
 //		y = y - radius;
 		calculateRotationAngle();
