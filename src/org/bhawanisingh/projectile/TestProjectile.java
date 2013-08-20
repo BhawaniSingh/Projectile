@@ -2,22 +2,21 @@ package org.bhawanisingh.projectile;
 
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 import javax.swing.JComponent;
 
-public class TestProjectile extends JComponent implements Runnable, MouseListener, MouseMotionListener, MouseWheelListener {
+public class TestProjectile extends JComponent implements Runnable, MouseListener, MouseMotionListener, MouseWheelListener, ComponentListener {
 
 	private double initialVelocity = 30;
 	private double angle = 45;
@@ -46,11 +45,13 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 	private double scaleXAmount = 0.1d;
 	private double scaleYAmount = (16 / 9) * scaleXAmount;
 
-	private LaunchProjectile launchProjectile;
+	private int h;
+	private int w;
 
-	public TestProjectile(LaunchProjectile launchProjectile) {
-		this.launchProjectile = launchProjectile;
-		ball = new Ball();
+	public TestProjectile(int w, int h) {
+		this.w = w;
+		this.h = h;
+		ball = new Ball(this);
 		initialHorizontalVelocity = calculateInitialHorizontalVelocity();
 		horizontalvelocity = initialHorizontalVelocity;
 
@@ -58,6 +59,7 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 		addMouseWheelListener(this);
 		addMouseListener(this);
 		addMouseMotionListener(this);
+		addComponentListener(this);
 	}
 
 	@Override
@@ -92,6 +94,7 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 
 	@Override
 	public void paintComponents(Graphics g) {
+		System.err.println("Height : " + h + "\tWidth : " + w);
 		Graphics2D graphics = (Graphics2D) g;
 		graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -103,8 +106,16 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 		graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 //		graphics.setFont(new Font(this.getFont().getName(), Font.ITALIC, 50));
 		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+		graphics.translate(ball.getRadius(), getHeight() - ball.getRadius());
+		graphics.scale(scaleX, scaleY);
+		graphics.translate(-ball.getRadius(), -getHeight() + ball.getRadius());
+		graphics.translate(xTranslate, yTranslate);
+		graphics.setStroke(new BasicStroke());
+		graphics.drawLine(ball.getRadius(), 0, ball.getRadius(), getHeight() - ball.getRadius());
+		graphics.drawLine(ball.getRadius(), getHeight() - ball.getRadius(), getWidth() + ball.getRadius(), getHeight() - ball.getRadius());
+//		graphics.drawLine(0, 0, 0, h);
+//		graphics.drawLine(0, h, w, h);
 		ball.renderBall(graphics);
-
 		// This method ensures that the display is up-to-date. It is useful for animation.
 		Toolkit.getDefaultToolkit().sync();
 		// Releases system resources and disposes graphics context
@@ -236,7 +247,6 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 		} else {
 			scaleX = Math.max(0.001, scaleX - (scaleX * scaleXAmount));
 			scaleY = Math.max(0.001, scaleY - (scaleY * scaleYAmount));
-			System.err.println("Scale  is : " + scaleX + "," + scaleY);
 		}
 		repaint();
 	}
@@ -244,8 +254,8 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 	@Override
 	public void mouseDragged(MouseEvent e) {
 //		if ((Math.abs(e.getX() - xPosition) <= 20) && (Math.abs(e.getX() - xPosition) <= 20)) {
-		xTranslate = (xTranslateAmount + e.getX()) - xPosition;
-		yTranslate = (yTranslateAmount + e.getY()) - yPosition;
+		xTranslate = (int) ((((xTranslateAmount) + e.getX()) - xPosition) / scaleX);
+		yTranslate = (int) ((((yTranslateAmount) + e.getY()) - yPosition) / scaleY);
 //		} else {
 //			xTranslate = (e.getX()) - xPosition;
 //			yTranslate = (e.getY()) - yPosition;
@@ -275,8 +285,8 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		xTranslateAmount = xTranslate;
-		yTranslateAmount = yTranslate;
+		xTranslateAmount = (int) (xTranslate * scaleX);
+		yTranslateAmount = (int) (yTranslate * scaleY);
 
 	}
 
@@ -292,83 +302,26 @@ public class TestProjectile extends JComponent implements Runnable, MouseListene
 
 	}
 
-	private class Ball {
-		final float dash1[] = { 10.0f };
-		final BasicStroke dashed = new BasicStroke(3.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND, 10.0f, dash1, 0.0f);
+	@Override
+	public void componentResized(ComponentEvent e) {
+		System.out.println(e.getID());
+	}
 
-		private int radius = 10;
-		private int dx = 15;
-		private int x;
-		private int previousX = x;
-		private int dy;
-		private int y = 0;
-		private int previousY = y;
-		private double rotate = 0.0d;
-		private double gravity = 15d;
+	@Override
+	public void componentMoved(ComponentEvent e) {
+		// TODO Auto-generated method stub
 
-		private ArrayList<Integer> xPointsList = new ArrayList<Integer>();
-		private ArrayList<Integer> yPointsList = new ArrayList<Integer>();
+	}
 
-//		private double acceleration = this.gravity;
-		private double dt = 0.2d;
-		private double time = 0d;
+	@Override
+	public void componentShown(ComponentEvent e) {
+		// TODO Auto-generated method stub
 
-		public void renderBall(Graphics2D graphics2d) {
-			graphics2d.translate(getWidth() / 2, getHeight() / 2);
-			graphics2d.scale(scaleX, scaleY);
-			graphics2d.translate(-getWidth() / 2, -getHeight() / 2);
-			graphics2d.translate(xTranslate, yTranslate);
-			graphics2d.setStroke(new BasicStroke(2));
-//			graphics2d.drawLine(0, 0, 0, getHeight());
-//			graphics2d.drawLine(0, getHeight(), getWidth(), getHeight());
-			graphics2d.setStroke(dashed);
-			graphics2d.drawPolyline(arrayListToIntArray(xPointsList), arrayListToIntArray(yPointsList), xPointsList.size());
+	}
 
-			graphics2d.rotate(ball.rotate, ball.x, ball.y);
-			graphics2d.setColor(Color.GREEN);
+	@Override
+	public void componentHidden(ComponentEvent e) {
+		// TODO Auto-generated method stub
 
-			graphics2d.fillOval(x - radius, y - radius, radius * 2, radius * 2);
-			graphics2d.setColor(Color.BLACK);
-			graphics2d.drawLine(x, y, (x - ((radius * 3) / 4)), (y - ((radius * 3) / 4)));
-			graphics2d.drawLine(x, y, (x - ((radius * 3) / 4)), (y - ((radius * 3) / 4)));
-
-			graphics2d.setStroke(dashed);
-			graphics2d.setColor(Color.MAGENTA);
-			graphics2d.drawOval(x - radius, y - radius, radius * 2, radius * 2);
-//			System.err.println(this.rotate);
-		}
-
-		public void parabolicMotion() {
-			double verticalVelocity = calculateVerticalHeight();
-			x = (int) (calculateHorizontalDistance());
-			if (verticalVelocity <= 0) {
-				verticalVelocity = -verticalVelocity;
-			}
-			y = (int) (getHeight() - verticalVelocity);
-			addPointToArrayList();
-			y = y - radius;
-			calculateRotationAngle();
-		}
-
-		public void calculateRotationAngle() {
-			double difference = Math.abs(previousX - x);
-			double radians = (difference * Math.PI) / 20;
-			rotate = rotate + radians;
-			previousX = x;
-		}
-
-		public void addPointToArrayList() {
-			xPointsList.add(x);
-			yPointsList.add(y);
-		}
-
-		public int[] arrayListToIntArray(ArrayList<Integer> points) {
-			int[] intPoints = new int[points.size()];
-			Iterator<Integer> iterator = points.iterator();
-			for (int i = 0; i < intPoints.length; i++) {
-				intPoints[i] = iterator.next().intValue();
-			}
-			return intPoints;
-		}
 	}
 }

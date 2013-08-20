@@ -7,29 +7,13 @@ public class LaunchProjectile extends JFrame {
 
 	private TestProjectile testProjectile;
 	private Thread thread;
-	private int WIDTH = 800;
-	private int HEIGHT = 600;
-
-	public int getWIDTH() {
-		return WIDTH;
-	}
-
-	public void setWIDTH(int wIDTH) {
-		WIDTH = wIDTH;
-	}
-
-	public int getHEIGHT() {
-		return HEIGHT;
-	}
-
-	public void setHEIGHT(int hEIGHT) {
-		HEIGHT = hEIGHT;
-	}
+	private int width = 800;
+	private int height = 600;
 
 	public LaunchProjectile() {
 		super("Projectile Simulation");
-		setSize(800, 600);
-		testProjectile = new TestProjectile(this);
+		setSize(width, height);
+		testProjectile = new TestProjectile(width, height);
 		add(testProjectile);
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
